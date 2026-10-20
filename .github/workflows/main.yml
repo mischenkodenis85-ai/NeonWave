@@ -1,0 +1,44 @@
+name: Build NeonWave APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'NeonWave_Android_Project_Updated.zip'
+      - '.github/workflows/main.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Unpack project
+        run: |
+          unzip NeonWave_Android_Project_Updated.zip -d project
+          find project -maxdepth 3 -type f | head -80
+
+      - name: Build APK
+        run: |
+          cd project
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            echo "Gradle wrapper not found in ZIP"
+            exit 1
+          fi
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeonWave-debug-apk
+          path: project/**/build/outputs/apk/debug/*.apk
